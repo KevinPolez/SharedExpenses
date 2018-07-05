@@ -1,0 +1,15 @@
+{
+    "name": "Shared Expenses",
+    "description": "A shared expenses application for nextcloud",
+    "type": "project",
+    "license": "AGPL",
+    "authors": [
+        {
+            "name": "Polez Kevin"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "^5.4"
+    }
+}

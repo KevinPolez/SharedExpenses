@@ -1,0 +1,58 @@
+.app-content-list {
+  width : 70%;
+  padding: 10px;
+}
+.app-content-detail {
+  width: 30%;
+  padding: 10px;
+}
+#editor {
+  width: 100%;
+}
+
+#editor input {
+  width: 100%;
+}
+
+#editor textarea {
+  width: 100%;
+}
+
+div.app-navigation-entry-bullet {
+  background-color: green;
+}
+
+.total {
+    text-align: right;
+    background-color: green;
+    color: #fff;
+    padding-right: 10px;
+}
+
+.addExpenseForm, .resumeReckoning {
+  border: 1px solid #eee;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.resumeReckoning ul {
+  list-style: square inside;
+}
+
+.highcharts-graph.highcharts-negative {
+	stroke: red;
+}
+.highcharts-area.highcharts-negative {
+	fill: red;
+}
+.highcharts-point.highcharts-negative {
+	fill: red;
+}
+
+.warning {
+  background-color: #fba;
+}
+
+.ok {
+  background-color: green;
+}
