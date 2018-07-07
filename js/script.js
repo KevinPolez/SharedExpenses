@@ -457,6 +457,12 @@
               $('.addExpenseForm p.message').addClass('error');
             }
        });
+
+       // popovermenu
+       $('.app-content-list-item .icon-more').click(function() {
+         $('.popovermenu').removeClass('open');
+         $(this).siblings('.popovermenu').toggleClass('open');
+       });
      },
      renderNavigation: function () {
          var source = $('#navigation-tpl').html();

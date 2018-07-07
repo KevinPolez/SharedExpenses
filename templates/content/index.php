@@ -74,25 +74,29 @@
 
       </div>
       {{#each reckoning.lines }}
-          <a href="#" class="app-content-list-item">
+          <div class="app-content-list-item">
             <div class="app-content-list-item-icon" style="background-color: rgb(152, 59, 144);">{{firstLetter who}}</div>
-            <div class="app-content-list-item-line-one">{{why}}</diV>
+            <div class="app-content-list-item-line-one">{{why}}</div>
             <div class="app-content-list-item-line-two"><b>{{who}}</b> <?php p($l->t('has paid'));?> <b>{{amount}} euros</b></div>
             <span class="app-content-list-item-details">{{when}}</span>
-            <div class="icon-more"></div>
-            <div class="popovermenu">
-              <ul>
-                <li>
-                  <a href="#" class="icon-edit">
-                      <span>Edit</span>
-                  </a>
-                  <a href="#" class="icon-delete">
-                      <span>Delete</span>
-                  </a>
-                </li>
-              </ul>
+            <div class="app-content-list-item-menu">
+              <div class="icon-more"></div>
+              <div class="popovermenu">
+                <ul>
+                  <li>
+                    <a href="#" class="icon-edit">
+                        <span>Edit</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" class="icon-delete">
+                        <span>Delete</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </a>
+          </div>
       {{else}}
             <?php p($l->t('No reckoning'));?>
             <?php p($l->t('Add a new expense for start your reckoning'));?>
