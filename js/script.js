@@ -274,6 +274,53 @@
              });
          });
      },
+
+     // check amount
+     checkAmount: function(amount) {
+       if (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/
+          .test(amount)) {
+           $('#app-content input.combien').addClass('ok');
+           $('#app-content input.combien').removeClass('warning');
+          return true;
+       }
+       $('#app-content input.combien').addClass('warning');
+       $('#app-content input.combien').removeClass('ok');
+       return false;
+     },
+     // check who
+     checkWho: function(who) {
+       if ( who === "" ) {
+         $('#app-content input.qui').addClass('warning');
+         $('#app-content input.qui').removeClass('ok');
+         return false;
+       }
+       $('#app-content input.qui').addClass('ok');
+       $('#app-content input.qui').removeClass('warning');
+       return true;
+     },
+     // check why
+     checkWhy: function(why) {
+       if ( why === "" ) {
+         $('#app-content input.quoi').addClass('warning');
+         $('#app-content input.quoi').removeClass('ok');
+         return false;
+       }
+       $('#app-content input.quoi').addClass('ok');
+       $('#app-content input.quoi').removeClass('warning');
+       return true;
+     },
+     // check when
+     checkWhen: function(when) {
+       if ( when === "" ) {
+         $('#app-content input.quand').addClass('warning');
+         $('#app-content input.quand').removeClass('ok');
+         return false;
+       }
+       $('#app-content input.quand').addClass('ok');
+       $('#app-content input.quand').removeClass('warning');
+       return true;
+     },
+
      renderList: function() {
        var source = $('#list-tpl').html();
        var template = Handlebars.compile(source);
@@ -354,32 +401,61 @@
          $('.resumeReckoning').toggleClass('hidden');
        });
 
-
        // check if amount is correct
        $('#app-content input.combien').keydown(function(event) {
-         var amount = parseFloat(this.value+event.key);
-         if ( isNaN(amount)) {
-             $(this).removeClass('ok');
-             $(this).addClass('warning');
-         }
-         else {
-             $(this).removeClass('warning');
-             $(this).addClass('ok');
+         self.checkAmount(this.value+event.key);
+       });
+
+       $('#app-content input.qui').keydown(function(event) {
+         self.checkWho(this.value+event.key);
+       });
+
+       $('#app-content input.quoi').keydown(function(event) {
+         self.checkWhy(this.value+event.key);
+       });
+
+       $('#app-content input.quand').keydown(function(event) {
+         self.checkWhen(this.value+event.key);
+       });
+
+       // datepicker
+       $('#app-content input.quand').datepicker({
+         onSelect: function(dateText) {
+           $('#app-content input.quand').addClass('ok');
+           $('#app-content input.quand').removeClass('warning');
          }
        });
 
        // handle new line
        $('#app-content button.new_line').click(function() {
+            // get values
             var amount = $('#app-content input.combien').val();
             var when = $('#app-content input.quand').val();
             var who = $('#app-content input.qui').val();
             var why = $('#app-content input.quoi').val();
 
-            self._reckonings.addLine(amount, when, who, why).done(function() {
-                self.render();
-            }).fail(function() {
-              alert('Could not add line on reckoning');
-            });
+            // check values
+            var resultAmount = self.checkAmount(amount);
+            var resultWhen = self.checkWhen(when);
+            var resultWho = self.checkWho(who);
+            var resultWhy = self.checkWhy(why);
+
+            // if everythings are OK, add the new line
+            // else, show a warning.
+            if ( resultAmount == true
+              && resultWhen == true
+              && resultWho == true
+              && resultWhy == true ) {
+              self._reckonings.addLine(amount, when, who, why).done(function() {
+                  self.render();
+              }).fail(function() {
+                alert('Could not add line on reckoning');
+              });
+            }
+            else {
+              $('.addExpenseForm p.message').text("Sorry, There are some misformated data on your request. You should fix that before send a new expense.");
+              $('.addExpenseForm p.message').addClass('error');
+            }
        });
      },
      renderNavigation: function () {

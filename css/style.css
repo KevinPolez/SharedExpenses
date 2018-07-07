@@ -56,3 +56,7 @@ div.app-navigation-entry-bullet {
 .ok {
   background-color: green;
 }
+
+.error {
+  color: red;
+}

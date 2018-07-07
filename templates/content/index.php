@@ -43,6 +43,8 @@
               <input class="combien" placeholder="<?php p($l->t('How much ?')); ?>"></input>
 
               <button class="new_line"><?php p($l->t('Add')); ?></button>
+
+              <p class="message"></p>
           </div>
           <a href="#" class="resume app-content-list-item">
             <div class="app-content-list-item-icon" style="background-color: rgb(0, 0, 0);">...</div>

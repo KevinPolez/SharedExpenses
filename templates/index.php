@@ -21,9 +21,10 @@
  *
  */
 
+script('sharedexpenses', 'vendor/highcharts.min');
 script('sharedexpenses', 'script');
-script('sharedexpenses', 'highcharts.min');
 style('sharedexpenses', 'style');
+
 
 ?>
 
