@@ -237,6 +237,37 @@
         });
         return deferred.promise();
      },
+     updateLine: function(lineId, amount, when, who, why) {
+       var deferred = $.Deferred();
+       var reckoning = this.getActive();
+       var self = this;
+
+       var line = {
+         'reckoningId': reckoning.id,
+         'id': lineId,
+         'amount': amount,
+         'when': when,
+         'who': who,
+         'why': why
+       };
+
+       $.ajax({
+           url: this._baseUrl + '/' + reckoning.id + '/lines/'+lineId,
+           method: 'PUT',
+           contentType: 'application/json',
+           data: JSON.stringify(line)
+       }).done(function(line) {
+         var index = self._activeReckoning.lines.findIndex(function(element){
+           return element.id == line.id;
+         });
+         self._activeReckoning.lines[index] = line;
+         self.load(reckoning.id);
+         deferred.resolve();
+       }).fail(function() {
+          deferred.reject();
+       });
+       return deferred.promise();
+     },
      deleteLine: function(lineId) {
        var deferred = $.Deferred();
        var reckoning = this.getActive();
@@ -300,48 +331,48 @@
      },
 
      // check amount
-     checkAmount: function(amount) {
+     checkAmount: function(element, amount) {
        if (/^(\-|\+)?([0-9]+(\.[0-9]+)?|Infinity)$/
           .test(amount)) {
-           $('#app-content input.combien').addClass('ok');
-           $('#app-content input.combien').removeClass('warning');
+           $(element).addClass('ok');
+           $(element).removeClass('warning');
           return true;
        }
-       $('#app-content input.combien').addClass('warning');
-       $('#app-content input.combien').removeClass('ok');
+       $(element).addClass('warning');
+       $(element).removeClass('ok');
        return false;
      },
      // check who
-     checkWho: function(who) {
+     checkWho: function(element, who) {
        if ( who === "" ) {
-         $('#app-content input.qui').addClass('warning');
-         $('#app-content input.qui').removeClass('ok');
+         $(element).addClass('warning');
+         $(element).removeClass('ok');
          return false;
        }
-       $('#app-content input.qui').addClass('ok');
-       $('#app-content input.qui').removeClass('warning');
+       $(element).addClass('ok');
+       $(element).removeClass('warning');
        return true;
      },
      // check why
-     checkWhy: function(why) {
+     checkWhy: function(element, why) {
        if ( why === "" ) {
-         $('#app-content input.quoi').addClass('warning');
-         $('#app-content input.quoi').removeClass('ok');
+         $(element).addClass('warning');
+         $(element).removeClass('ok');
          return false;
        }
-       $('#app-content input.quoi').addClass('ok');
-       $('#app-content input.quoi').removeClass('warning');
+       $(element).addClass('ok');
+       $(element).removeClass('warning');
        return true;
      },
      // check when
-     checkWhen: function(when) {
+     checkWhen: function(element, when) {
        if ( when === "" ) {
-         $('#app-content input.quand').addClass('warning');
-         $('#app-content input.quand').removeClass('ok');
+         $(element).addClass('warning');
+         $(element).removeClass('ok');
          return false;
        }
-       $('#app-content input.quand').addClass('ok');
-       $('#app-content input.quand').removeClass('warning');
+       $(element).addClass('ok');
+       $(element).removeClass('warning');
        return true;
      },
 
@@ -427,19 +458,19 @@
 
        // check if amount is correct
        $('#app-content input.combien').keydown(function(event) {
-         self.checkAmount(this.value+event.key);
+         self.checkAmount(this, this.value+event.key);
        });
 
        $('#app-content input.qui').keydown(function(event) {
-         self.checkWho(this.value+event.key);
+         self.checkWho(this, this.value+event.key);
        });
 
        $('#app-content input.quoi').keydown(function(event) {
-         self.checkWhy(this.value+event.key);
+         self.checkWhy(this, this.value+event.key);
        });
 
        $('#app-content input.quand').keydown(function(event) {
-         self.checkWhen(this.value+event.key);
+         self.checkWhen(this, this.value+event.key);
        });
 
        // datepicker
@@ -451,18 +482,21 @@
        });
 
        // handle new line
-       $('#app-content button.new_line').click(function() {
-            // get values
-            var amount = $('#app-content input.combien').val();
-            var when = $('#app-content input.quand').val();
-            var who = $('#app-content input.qui').val();
-            var why = $('#app-content input.quoi').val();
+       $('.addExpenseForm button.new_line').click(function() {
+           // get the form
+           var form = $(this).parent('.addExpenseForm');
+
+           // get values
+           var amount = $('input.combien', form).val();
+           var when = $('input.quand', form).val();
+           var who = $('input.qui', form).val();
+           var why = $('input.quoi', form).val();
 
             // check values
-            var resultAmount = self.checkAmount(amount);
-            var resultWhen = self.checkWhen(when);
-            var resultWho = self.checkWho(who);
-            var resultWhy = self.checkWhy(why);
+            var resultAmount = self.checkAmount($('input.combien', form),amount);
+            var resultWhen = self.checkWhen($('input.quand', form),when);
+            var resultWho = self.checkWho($('input.qui', form),who);
+            var resultWhy = self.checkWhy($('input.quoi', form),why);
 
             // if everythings are OK, add the new line
             // else, show a warning.
@@ -480,6 +514,43 @@
               $('.addExpenseForm p.message').text("Sorry, There are some misformated data on your request. You should fix that before send a new expense.");
               $('.addExpenseForm p.message').addClass('error');
             }
+       });
+
+       // handle update line
+       $('.updateExpenseForm button.update_line').click(function() {
+             // get the form
+             var form = $(this).parent('.updateExpenseForm');
+
+             // get values
+             var amount = $('input.combien', form).val();
+             var when = $('input.quand', form).val();
+             var who = $('input.qui', form).val();
+             var why = $('input.quoi', form).val();
+
+             // check values
+             var resultAmount = self.checkAmount($('input.combien', form),amount);
+             var resultWhen = self.checkWhen($('input.quand', form),when);
+             var resultWho = self.checkWho($('input.qui', form),who);
+             var resultWhy = self.checkWhy($('input.quoi', form),why);
+
+             var lineId = $(form).data('id');
+
+             // if everythings are OK, update the new line
+             // else, show a warning.
+             if ( resultAmount == true
+               && resultWhen == true
+               && resultWho == true
+               && resultWhy == true ) {
+               self._reckonings.updateLine(lineId, amount, when, who, why).done(function() {
+                   self.render();
+               }).fail(function() {
+                 alert('Could not add line on reckoning');
+               });
+             }
+             else {
+               $('.addExpenseForm p.message').text("Sorry, There are some misformated data on your request. You should fix that before send a new expense.");
+               $('.addExpenseForm p.message').addClass('error');
+             }
        });
 
        // popovermenu
@@ -501,7 +572,8 @@
 
        // handle edit line
        $('#app-content .edit_line').click(function() {
-         console.log("edit line");
+         $(this).parents('.app-content-list-item').siblings('.updateExpenseForm').show();
+         $(this).parents('.popovermenu').removeClass('open');
        });
 
      },

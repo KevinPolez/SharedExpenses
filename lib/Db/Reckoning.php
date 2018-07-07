@@ -132,11 +132,24 @@ class Reckoning extends Entity implements JsonSerializable {
 
     /**
      * Delete a line from a reckoning
+     * @param Line $line
      */
     public function deleteLine(Line $line) {
         $key = array_search($line, $this->lines);
-        var_dump($key);
         if ( $key !== false ) unset($this->lines[$key]);
+    }
+
+    /**
+     * Update a line
+     * @param Line $line
+     */
+    public function updateLine(Line $line) {
+        foreach ( $this->lines as $key => $l) {
+          if ($l->getId() == $line->getId() ) {
+            $this->lines[$key] = $line;
+            break;
+          }
+        }
     }
 
 }

@@ -60,14 +60,14 @@ class LineService {
         return $line;
     }
 
-    public function update($id, $reckoningId, $amount, $who, $when, $why) {
+    public function update($id, $reckoningId, $amount, $when, $who, $why, $userId) {
         try {
-            $line = $this->reckoningService->findLine($reckoningId, $lineId, $userId);
+            $line = $this->reckoningService->findLine($reckoningId, $id, $userId);
             $line->setReckoningId($reckoningId);
             $line->setAmount($amount);
             $line->setWho($who);
-            $line->setWhen($who);
-            $line->setWhy($who);
+            $line->setWhen($when);
+            $line->setWhy($why);
 
             $this->reckoningService->updateLine($reckoningId, $line, $userId);
             return $line;

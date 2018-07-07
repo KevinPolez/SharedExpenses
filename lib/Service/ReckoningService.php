@@ -175,6 +175,17 @@ class ReckoningService {
       }
     }
 
+    public function updateLine($reckoningId, Line $line, $userId) {
+      try {
+        $reckoning = $this->find($reckoningId, $userId);
+        $reckoning->updateLine($line);
+        $this->save($reckoning, $userId);
+        return $line;
+      } catch(Exception $e) {
+        $this->handleException($e);
+      }
+    }
+
     /**
      * Find a line on a reckoning
      */

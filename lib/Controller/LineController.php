@@ -84,9 +84,9 @@
       * @param int $reckoningId
       * @param string $ammmount
       */
-     public function update($id, $reckoningId, $ammount, $when, $who, $why) {
-         return $this->handleNotFound(function () use ($id, $reckoningId, $ammount, $when, $who, $why) {
-           return $this->service->update($id, $reckoningId, $ammount,$when, $who, $why, $this->userId);
+     public function update($id, $reckoningId, $amount, $when, $who, $why) {
+         return $this->handleNotFound(function () use ($id, $reckoningId, $amount, $when, $who, $why) {
+           return $this->service->update($id, $reckoningId, $amount,$when, $who, $why, $this->userId);
          });
      }
 

@@ -97,6 +97,19 @@
               </div>
             </div>
           </div>
+          <div class="updateExpenseForm hidden" data-id="{{ id }}">
+            <input class="qui" value="{{who}}"></input>
+
+            <input class="quand" value="{{when}}"></input>
+
+            <input class="quoi" value="{{why}}"></input>
+
+            <input class="combien" value="{{amount}}"></input>
+
+            <button class="update_line"><?php p($l->t('Update')); ?></button>
+
+            <p class="message"></p>
+          </div>
       {{else}}
             <?php p($l->t('No reckoning'));?>
             <?php p($l->t('Add a new expense for start your reckoning'));?>
