@@ -144,15 +144,50 @@ class ReckoningService {
      * @param int $reckoningId the id of the reckoning
      * @param Line $line
      * @param string $userId
+     * @return Line
      */
     public function addLine($reckoningId, Line $line, $userId) {
         try {
             $reckoning = $this->find($reckoningId, $userId);
-            $reckoning->addLine($line);
-            return $this->save($reckoning, $userId);
+            $line = $reckoning->addLine($line);
+            $this->save($reckoning, $userId);
+            return $line;
         } catch(Exception $e) {
             $this->handleException($e);
         }
+    }
+
+    /**
+     * Delete a line from a reckoning
+     * @param int $reckoningId the id of the reckoning
+     * @param Line $line
+     * @param string $userId
+     * @return Line
+     */
+    public function deleteLine($reckoningId, Line $line, $userId) {
+      try {
+        $reckoning = $this->find($reckoningId, $userId);
+        $reckoning->deleteLine($line);
+        $this->save($reckoning, $userId);
+        return $line;
+      } catch(Exception $e) {
+        $this->handleException($e);
+      }
+    }
+
+    /**
+     * Find a line on a reckoning
+     */
+    public function findLine($reckoningId, $lineId, $userId)
+    {
+      try {
+        $reckoning = $this->find($reckoningId, $userId);
+        $line = $reckoning->findLine($lineId);
+        return $line;
+      } catch(Exception $e) {
+        $this->handleException($e);
+      }
+
     }
 
     private function save(Reckoning $reckoning, $userId)

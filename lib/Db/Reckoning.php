@@ -53,7 +53,20 @@ class Reckoning extends Entity implements JsonSerializable {
        $this->setDescription($content['description']);
        $this->setCreated($content['created']);
        $this->setOwner($content['owner']);
-       $this->setLines($content['lines']);
+
+       foreach ($content['lines'] as $l) {
+         $line = new Line();
+         $line->setId($l['id']);
+         $line->setReckoningId($l['reckoningId']);
+         $line->setAmount($l['amount']);
+         $line->setWho($l['who']);
+         $line->setWhy($l['why']);
+         $line->setUserId($l['userId']);
+         $line->setWhen($l['when']);
+         $line->setCreated($l['created']);
+
+         $this->lines[] = $line;
+       }
     }
 
     /**
@@ -88,7 +101,42 @@ class Reckoning extends Entity implements JsonSerializable {
         ];
     }
 
+    /**
+     * add a new line, set id of this line
+     * @param Line $line
+     * @return Line
+     */
     public function addLine(Line $line) {
+      $line->setReckoningId($this->getId());
+      $id = 0;
+      if ( $lastLine = end($this->lines))
+      {
+          $id = $lastLine->getId()+1;
+      }
+      $line->setId($id);
       $this->lines[] = $line;
+      return $line;
     }
+
+    /**
+     * Find a line on a reckoning
+     * @param $lineId
+     */
+    public function findLine($lineId) {
+        foreach ($this->lines as $line) {
+          if ( $line->getId() == $lineId)
+          return $line;
+        }
+        return null;
+    }
+
+    /**
+     * Delete a line from a reckoning
+     */
+    public function deleteLine(Line $line) {
+        $key = array_search($line, $this->lines);
+        var_dump($key);
+        if ( $key !== false ) unset($this->lines[$key]);
+    }
+
 }

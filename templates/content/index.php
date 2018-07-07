@@ -74,7 +74,7 @@
 
       </div>
       {{#each reckoning.lines }}
-          <div class="app-content-list-item">
+          <div class="app-content-list-item" data-id="{{ id }}">
             <div class="app-content-list-item-icon" style="background-color: rgb(152, 59, 144);">{{firstLetter who}}</div>
             <div class="app-content-list-item-line-one">{{why}}</div>
             <div class="app-content-list-item-line-two"><b>{{who}}</b> <?php p($l->t('has paid'));?> <b>{{amount}} euros</b></div>
@@ -84,12 +84,12 @@
               <div class="popovermenu">
                 <ul>
                   <li>
-                    <a href="#" class="icon-edit">
+                    <a href="#" class="icon-edit edit_line">
                         <span>Edit</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" class="icon-delete">
+                    <a href="#" class="icon-delete delete_line">
                         <span>Delete</span>
                     </a>
                   </li>

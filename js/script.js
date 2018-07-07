@@ -107,7 +107,7 @@
                self._activeReckoning.balance.forEach(function(line) {
                  if (line.credit == element.name) solde -= line.amount;
                });
-               return solde > 0;
+               return solde >= 0;
              });
 
              // create a balance line
@@ -228,7 +228,7 @@
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(line)
-        }).done(function() {
+        }).done(function(line) {
           self._activeReckoning.lines.push(line);
           self.load(reckoning.id);
           deferred.resolve();
@@ -236,6 +236,30 @@
           deferred.reject();
         });
         return deferred.promise();
+     },
+     deleteLine: function(lineId) {
+       var deferred = $.Deferred();
+       var reckoning = this.getActive();
+       var self = this;
+
+       $.ajax({
+           url: this._baseUrl + '/' + reckoning.id + '/lines/'+lineId,
+           method: 'DELETE',
+           contentType: 'application/json'
+       }).done(function(line) {
+         var index;
+         self._activeReckoning.lines.forEach(function (l, counter) {
+             if (l.id === line.id) {
+                 index = counter;
+             }
+         });
+         self._activeReckoning.lines.splice(index,1);
+         self.load(reckoning.id);
+         deferred.resolve();
+       }).fail(function() {
+         deferred.reject();
+       });
+       return deferred.promise();
      }
  };
 
@@ -460,9 +484,26 @@
 
        // popovermenu
        $('.app-content-list-item .icon-more').click(function() {
-         $('.popovermenu').removeClass('open');
-         $(this).siblings('.popovermenu').toggleClass('open');
+         var menu = $(this).siblings('.popovermenu');
+         $('.popovermenu').not(menu).removeClass('open');
+         $(menu).toggleClass('open');
        });
+
+       // handle delete line
+       $('#app-content .delete_line').click(function() {
+         var id = parseInt($(this).parents('.app-content-list-item').data('id'), 10);
+         self._reckonings.deleteLine(id).done(function() {
+            self.render();
+         }).fail(function() {
+           alert('Could not delete line');
+         });
+       });
+
+       // handle edit line
+       $('#app-content .edit_line').click(function() {
+         console.log("edit line");
+       });
+
      },
      renderNavigation: function () {
          var source = $('#navigation-tpl').html();

@@ -53,9 +53,9 @@ class LineService {
         $line->setWhen($when);
         $line->setWhy($why);
         $line->setUserId($userId);
-        $line->setCreated(date('Y-m-d H:i:s'));
+        $line->setCreated(new \Datetime('NOW'));
 
-        $this->reckoningService->addLine($reckoningId, $line, $userId);
+        $line = $this->reckoningService->addLine($reckoningId, $line, $userId);
 
         return $line;
     }
@@ -70,15 +70,16 @@ class LineService {
             $line->setWhy($who);
 
             $this->reckoningService->updateLine($reckoningId, $line, $userId);
+            return $line;
         } catch(Exception $e) {
             $this->handleException($e);
         }
     }
 
-    public function delete($id, $userId) {
+    public function delete($id, $reckoningId, $userId) {
         try {
-            $line = $this->mapper->find($id);
-            $this->mapper->delete($line);
+            $line = $this->reckoningService->findLine($reckoningId,$id,$userId);
+            $this->reckoningService->deleteLine($reckoningId, $line, $userId);
             return $line;
         } catch(Exception $e) {
             $this->handleException($e);

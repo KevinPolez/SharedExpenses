@@ -37,6 +37,8 @@
      private $service;
      private $userId;
 
+     use Errors;
+
      public function __construct($AppName, IRequest $request, LineService $service, $UserId){
          parent::__construct($AppName, $request);
          $this->service = $service;
@@ -93,9 +95,9 @@
       *
       * @param int $id
       */
-     public function destroy($id) {
-       return $this->handleNotFound(function () use ($id) {
-         return $this->service->delete($id, $this->userId);
+     public function destroy($id, $reckoningId) {
+       return $this->handleNotFound(function () use ($id, $reckoningId) {
+         return $this->service->delete($id, $reckoningId, $this->userId);
        });
      }
 
