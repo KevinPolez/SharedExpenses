@@ -29,6 +29,10 @@
    return context.substring(0, 1);
  });
 
+ Handlebars.registerHelper('toFixed', function(number) {
+  return parseFloat(number).toFixed(2);
+ });
+
  var translations = {
      newReckoning: $('#new-reckoning-string').text()
  };
@@ -53,6 +57,12 @@
              }
          });
      },
+
+     round: function(value) {
+       value = parseFloat(value);
+       value = +(Math.ceil(value + "e+2") +"e-2");
+       return value;
+     },
      compute: function() {
        var self = this;
        var reckoning = self._activeReckoning;
@@ -70,21 +80,23 @@
          if ( participant === undefined ) {
             self._activeReckoning.participants.push({
               'name': line.who,
-              'total': parseFloat(line.amount)
+              'total': self.round(line.amount)
             });
          } else { // if already exist
-           participant.total += parseFloat(line.amount);
+           participant.total += self.round(line.amount);
            var index = self._activeReckoning.participants.indexOf(participant);
            self._activeReckoning.participants[index] = participant;
          }
-         self._activeReckoning.total += parseFloat(line.amount);
+         self._activeReckoning.total += self.round(line.amount);
        });
 
        // solde compute
        var totalByParticipant = self._activeReckoning.total / self._activeReckoning.participants.length
+       totalByParticipant = self.round(totalByParticipant);
        this._activeReckoning.participants.forEach(function(participant) {
            var index = self._activeReckoning.participants.indexOf(participant);
            participant.solde = participant.total - totalByParticipant;
+           participant.solde = self.round(participant.solde);
            self._activeReckoning.participants[index] = participant;
        });
 
@@ -107,7 +119,7 @@
                self._activeReckoning.balance.forEach(function(line) {
                  if (line.credit == element.name) solde -= line.amount;
                });
-               return solde >= 0;
+               return solde > 0;
              });
 
              // create a balance line
@@ -553,6 +565,11 @@
              }
        });
 
+       // handle cancel button
+       $('.updateExpenseForm button.cancel_update').click(function() {
+            $(this).parent('.updateExpenseForm').hide();
+       });
+
        // popovermenu
        $('.app-content-list-item .icon-more').click(function() {
          var menu = $(this).siblings('.popovermenu');
@@ -572,7 +589,7 @@
 
        // handle edit line
        $('#app-content .edit_line').click(function() {
-         $(this).parents('.app-content-list-item').siblings('.updateExpenseForm').show();
+         $(this).parents('.app-content-list-item').next('.updateExpenseForm').show();
          $(this).parents('.popovermenu').removeClass('open');
        });
 
