@@ -320,26 +320,67 @@
          $('#editor').html(html);
 
         var self = this;
-         // handle save reckoning
-         $('#app-content button.save').click(function () {
-             var description = $('#app-content textarea').val();
-             var title = $('#app-content input.title').val();
 
-             self._reckonings.updateActive(title, description).done(function () {
-                 self.render();
-             }).fail(function () {
-                 alert('Could not update reckoning, not found');
-             });
-         });
+        // create an array with all participants
+        var reckoning = this._reckonings.getActive();
+        if ( reckoning !== undefined ) {
+          var participantArray = [];
+          var amountArray = [];
+          var soldeArray = [];
+          reckoning.participants.forEach(function(participant) {
+            participantArray.push(participant.name);
+            amountArray.push(participant.total);
+            soldeArray.push(participant.solde);
+          });
 
-         // handle delete reckoning
-         $('#app-content button.delete').click(function () {
-             self._reckonings.removeActive().done(function () {
-                 self.render();
-             }).fail(function () {
-                 alert('Could not update reckoning, not found');
-             });
-         });
+          var chartExpenseByUser = Highcharts.chart('chartExpenseByUser', {
+                  chart: {
+                      type: 'bar'
+                  },
+                  title: {
+                      text: 'Expenses by user'
+                  },
+                  xAxis: {
+                      categories: participantArray
+                  },
+                  yAxis: {
+                      title: {
+                          text: 'Euros'
+                      }
+                  },
+                  series: [{
+                      name: 'Amount',
+                      data: amountArray
+                  }]
+              });
+          var soldeByUser = Highcharts.chart('chartSoldeByUser', {
+                  chart: {
+                      type: 'bar'
+                  },
+                  title: {
+                      text: 'Solde by user'
+                  },
+                  xAxis: {
+                      categories: participantArray
+                  },
+                  yAxis: {
+                      title: {
+                          text: 'Euros'
+                      }
+                  },
+                  plotOptions: {
+                    series: {
+                      className: 'main-color',
+                      negativeColor: true
+                    }
+                  },
+                  series: [{
+                      name: 'Amount',
+                      data: soldeArray
+                  }]
+              });
+         }
+
      },
 
      // check amount
@@ -396,76 +437,10 @@
        $('#list_editor').html(html);
        var self = this;
 
-       // create an array with all participants
-       var reckoning = this._reckonings.getActive();
-       if ( reckoning !== undefined ) {
-         var participantArray = [];
-         var amountArray = [];
-         var soldeArray = [];
-         reckoning.participants.forEach(function(participant) {
-           participantArray.push(participant.name);
-           amountArray.push(participant.total);
-           soldeArray.push(participant.solde);
-         });
-
-         var chartExpenseByUser = Highcharts.chart('chartExpenseByUser', {
-                 chart: {
-                     type: 'bar'
-                 },
-                 title: {
-                     text: 'Expenses by user'
-                 },
-                 xAxis: {
-                     categories: participantArray
-                 },
-                 yAxis: {
-                     title: {
-                         text: 'Euros'
-                     }
-                 },
-                 series: [{
-                     name: 'Amount',
-                     data: amountArray
-                 }]
-             });
-         var soldeByUser = Highcharts.chart('chartSoldeByUser', {
-                 chart: {
-                     type: 'bar'
-                 },
-                 title: {
-                     text: 'Solde by user'
-                 },
-                 xAxis: {
-                     categories: participantArray
-                 },
-                 yAxis: {
-                     title: {
-                         text: 'Euros'
-                     }
-                 },
-                 plotOptions: {
-                   series: {
-                     className: 'main-color',
-                     negativeColor: true
-                   }
-                 },
-                 series: [{
-                     name: 'Amount',
-                     data: soldeArray
-                 }]
-             });
-        }
-
        // show add expense form when click on a.addExpense
        $('a.addExpense').on('click',function(event){
          event.preventDefault();
          $('.addExpenseForm').toggleClass('hidden');
-       });
-
-       // show reckoning resume when click on a.resume
-       $('a.resume').on('click',function(event){
-         event.preventDefault();
-         $('.resumeReckoning').toggleClass('hidden');
        });
 
        // check if amount is correct
@@ -601,8 +576,17 @@
 
          $('#app-navigation ul').html(html);
 
-         // create a new reckoning
          var self = this;
+
+         // popovermenu
+         $('.app-navigation-entry-utils-menu-button button').click(function() {
+           var menu = $(this).parents('.app-navigation-entry-utils').next('.app-navigation-entry-menu');
+           $('.app-navigation-entry-menu').not(menu).removeClass('open');
+           $(menu).toggleClass('open');
+         });
+
+
+         // handle create a new reckoning
          $('#new-reckoning').click(function () {
              var reckoning = {
                  title: translations.newReckoning,
@@ -617,8 +601,8 @@
              });
          });
 
-         // delete a reckoning
-         $('#app-navigation .reckoning .delete').click(function () {
+         // handle delete a reckoning
+         $('#app-navigation a.deleteReckoning').click(function () {
              var entry = $(this).closest('.reckoning');
              entry.find('.app-navigation-entry-menu').removeClass('open');
 
@@ -632,12 +616,45 @@
              });
          });
 
+         // handle edit a reckoning
+         $('#app-navigation a.editReckoning').click(function() {
+            var entry = $(this).closest('.reckoning');
+
+            entry.find('.app-navigation-entry-menu').removeClass('open');
+            var id = parseInt(entry.data('id'), 10);
+
+            self._reckonings.load(id);
+            var reckoning = self._reckonings.getActive()
+
+            var form = entry.find('.updateReckoningForm')
+            $('.updateReckoningForm').not(form).hide();
+            $(form).show();
+            self.renderContent();
+            self.renderList();
+            $('input.title',form).val(reckoning.title);
+            $('textarea.description',form).val(reckoning.description);
+         });
+
+         // handle cancel edit
+         $('.updateReckoningForm button.cancel').click(function() {
+              $(this).closest('.updateReckoningForm').hide();
+         });
+
+         // handle save
+         $('.updateReckoningForm button.save').click(function() {
+            var form = $(this).closest('.updateReckoningForm');
+            var title = $('input.title',form).val();
+            var description = $('textarea.description',form).val();
+            self._reckonings.updateActive(title, description);
+            $(form).hide();
+            self.render();
+         });
+
          // load a reckoning
          $('#app-navigation .reckoning > a').click(function () {
              var id = parseInt($(this).parent().data('id'), 10);
              self._reckonings.load(id);
              self.render();
-             $('#editor textarea').focus();
          });
      },
      render: function () {

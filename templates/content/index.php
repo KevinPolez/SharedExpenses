@@ -1,33 +1,34 @@
 <script id="content-tpl" type="text/x-handlebars-template">
     {{#if reckoning}}
-        <div class="metainfo">
-            <h2>Général</h2>
-            <div class="input">
-              <label>Title</label>
-              <input class="title" value="{{ reckoning.title }}"></input>
-            </div>
-            <div class="input">
-              <label>Description</label>
-              <textarea>{{ reckoning.description }}</textarea>
-            </div>
-            <div class="action">
-              <button class="save"><?php p($l->t('Save')); ?></button>
-              <button class="delete"><?php p($l->t('Delete')); ?></button>
-            </div>
-        </div>
-        <h2>Options de partage</h2>
-          <ul>
-              <li>Mot de passe</li>
-              <li>Lien</li>
-          </ul>
+      <div class="total">
+        <h2><?php p($l->t('Total'));?> : <b>{{ toFixed reckoning.total }} euros</b></h2>
+      </div>
+      <div id="chartExpenseByUser" style="width:100%; height:400px;"></div>
+      <div id="chartSoldeByUser" style="width:100%; height:400px;"></div>
+      <h2><?php p($l->t('Expense')); ?></h2>
+      <ul>
+      {{#each reckoning.participants }}
+          <li><b>{{name}}</b>&nbsp;<?php p($l->t('has spent')); ?>&nbsp;<b>{{toFixed total}} euros</b></li>
+      {{/each}}
+      </ul>
+      <h2><?php p($l->t('Solde')); ?></h2>
+      <ul>
+      {{#each reckoning.participants }}
+          <li><b>{{name}}</b>&nbsp;:&nbsp;<b>{{toFixed solde}} euros</b></li>
+      {{/each}}
+      </ul>
+      <h2><?php p($l->t('Balance')); ?></h2>
+      <ul>
+      {{#each reckoning.balance }}
+          <li><b>{{debit}}</b>&nbsp;doit&nbsp;<b>{{toFixed amount}} euros</b> à <b>{{credit}}</b></li>
+      {{/each}}
+      </ul>
     {{/if}}
 </script>
 
 <script id="list-tpl" type="text/x-handlebars-template">
   {{#if reckoning}}
-      <div class="total">
-        <h2><?php p($l->t('Total'));?> : <b>{{ toFixed reckoning.total }} euros</b></h2>
-      </div>
+
       <div>
           <a href="#" class="addExpense app-content-list-item">
             <div class="app-content-list-item-icon" style="background-color: rgb(0, 0, 0);">+</div>
@@ -46,32 +47,6 @@
 
               <p class="message"></p>
           </div>
-          <a href="#" class="resume app-content-list-item">
-            <div class="app-content-list-item-icon" style="background-color: rgb(0, 0, 0);">...</div>
-            <div class="app-content-list-item-line-one"><?php p($l->t('Resume'));?></div>
-          </a>
-          <div class="resumeReckoning hidden">
-            <div id="chartExpenseByUser" style="width:100%; height:400px;"></div>
-            <div id="chartSoldeByUser" style="width:100%; height:400px;"></div>
-            <ul>
-            {{#each reckoning.participants }}
-                <li><b>{{name}}</b>&nbsp;<?php p($l->t('has spent')); ?>&nbsp;<b>{{toFixed total}} euros</b></li>
-            {{/each}}
-            </ul>
-            <h2><?php p($l->t('Solde')); ?></h2>
-            <ul>
-            {{#each reckoning.participants }}
-                <li><b>{{name}}</b>&nbsp;:&nbsp;<b>{{toFixed solde}} euros</b></li>
-            {{/each}}
-            </ul>
-            <h2><?php p($l->t('Balance')); ?></h2>
-            <ul>
-            {{#each reckoning.balance }}
-                <li><b>{{debit}}</b>&nbsp;doit&nbsp;<b>{{toFixed amount}} euros</b> à <b>{{credit}}</b></li>
-            {{/each}}
-            </ul>
-          </div>
-
       </div>
       {{#each reckoning.lines }}
           <div class="app-content-list-item" data-id="{{ id }}">

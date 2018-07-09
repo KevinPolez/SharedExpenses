@@ -48,15 +48,6 @@ class ReckoningService {
         return $reckonings;
     }
 
-    private function handleException ($e) {
-        if ($e instanceof DoesNotExistException ||
-            $e instanceof MultipleObjectsReturnedException) {
-            throw new NotFoundException($e->getMessage());
-        } else {
-            throw $e;
-        }
-    }
-
     /**
     * Used to get a single reckoning by id
     * @param int $id the id of the reckoning to get
@@ -68,21 +59,6 @@ class ReckoningService {
        $folder = $this->getFolderForUser($userId);
        return $this->getReckoning($this->getFileById($folder, $id), $folder, $this->getTags($id));
     }
-
-    /*public function create($title, $description, $userId) {
-        $reckoning = new Reckoning();
-        $reckoning->setTitle($title);
-        $reckoning->setDescription($description);
-        $reckoning->setOwner($userId);
-        $reckoning->setCreated(date('Y-m-d H:i:s'));
-  			$reckoning->setHash(\OC::$server->getSecureRandom()->generate(
-  				16,
-  				ISecureRandom::CHAR_DIGITS .
-  				ISecureRandom::CHAR_LOWER .
-  				ISecureRandom::CHAR_UPPER
-  			));
-        return $this->mapper->insert($reckoning);
-    }*/
 
     /**
      * Creates a reckoning and returns the empty reckoning
@@ -126,6 +102,10 @@ class ReckoningService {
 
     /**
      * Update a reckoning
+     * @param $id the id of the reckoning
+     * @param $title the new title
+     * @param $description the new description
+     * @param $userId the user id
      */
     public function update($id, $title, $description, $userId) {
         $reckoning = $this->find($id, $userId);
@@ -133,11 +113,10 @@ class ReckoningService {
         $reckoning->setDescription($description);
         $reckoning->setModified(new \Datetime('NOW'));
         $this->save($reckoning, $userId);
+
+        // if title is updated, the file name must be updated too
         return $reckoning;
     }
-    /*public function findLines($reckoningId) {
-        return $this->lineMapper->findByReckoning($reckoningId);
-    }*/
 
     /**
      * Add a line on a reckoning
@@ -175,6 +154,9 @@ class ReckoningService {
       }
     }
 
+    /**
+     *
+     */
     public function updateLine($reckoningId, Line $line, $userId) {
       try {
         $reckoning = $this->find($reckoningId, $userId);
@@ -201,6 +183,18 @@ class ReckoningService {
 
     }
 
+    private function handleException ($e) {
+        if ($e instanceof DoesNotExistException ||
+            $e instanceof MultipleObjectsReturnedException) {
+            throw new NotFoundException($e->getMessage());
+        } else {
+            throw $e;
+        }
+    }
+
+    /**
+     *
+     */
     private function save(Reckoning $reckoning, $userId)
     {
         $reckoningsFolder = $this->getFolderForUser($userId);
