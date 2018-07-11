@@ -21,18 +21,25 @@
  *
  */
 
-$app = new \OCA\SharedExpenses\AppInfo\Application();
+namespace OCA\SharedExpenses\Db;
 
-$app->registerRoutes($this, [
-    'resources' => [
-      'reckoning' => ['url' => '/reckonings'],
-      'reckoning_api' => ['url' => '/api/0.1/reckonings'],
-      'line' => ['url' => '/reckonings/{reckoningId}/lines'],
-      'participant' => ['url' => '/reckonings/{reckoningId}/participants']
-    ],
-    'routes' => [
-      ['name' => 'page#index', 'url' => '/', 'verb' => 'GET'],
-      ['name' => 'reckoning_api#preflighted_cors', 'url' => '/api/0.1/{path}',
-       'verb' => 'OPTIONS', 'requirements' => ['path' => '.+']],
-  ]
-]);
+use JsonSerializable;
+
+use OCP\AppFramework\Db\Entity;
+
+class Participant extends Entity implements JsonSerializable {
+
+  protected $reckoningId;
+  protected $name;
+  protected $percent;
+
+  public function jsonSerialize() {
+      return [
+          'id' => $this->id,
+          'reckoningId' => $this->reckoningId,
+          'name' => $this->name,
+          'percent' => $this->percent
+      ];
+  }
+
+}

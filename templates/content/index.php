@@ -3,20 +3,43 @@
       <div class="total">
         <h2><?php p($l->t('Total'));?> : <b>{{ toFixed reckoning.total }} euros</b></h2>
       </div>
-      <div id="chartExpenseByUser" style="width:100%; height:400px;"></div>
-      <div id="chartSoldeByUser" style="width:100%; height:400px;"></div>
+
       <h2><?php p($l->t('Expense')); ?></h2>
-      <ul>
-      {{#each reckoning.participants }}
-          <li><b>{{name}}</b>&nbsp;<?php p($l->t('has spent')); ?>&nbsp;<b>{{toFixed total}} euros</b></li>
-      {{/each}}
-      </ul>
+      <div class="tabs">
+          <ul>
+              <li><a href="#tabsExpense-1">Graph</a></li>
+              <li><a href="#tabsExpense-2">Data</a></li>
+          </ul>
+          <div id="tabsExpense-1">
+              <div id="chartExpenseByUser" style="width:100%; height:400px;"></div>
+          </div>
+          <div id="tabsExpense-2">
+              <ul>
+              {{#each reckoning.participants }}
+                  <li><b>{{name}}</b>&nbsp;<?php p($l->t('has spent')); ?>&nbsp;<b>{{toFixed total}} euros</b></li>
+              {{/each}}
+              </ul>
+          </div>
+      </div>
+
       <h2><?php p($l->t('Solde')); ?></h2>
-      <ul>
-      {{#each reckoning.participants }}
-          <li><b>{{name}}</b>&nbsp;:&nbsp;<b>{{toFixed solde}} euros</b></li>
-      {{/each}}
-      </ul>
+      <div class="tabs">
+          <ul>
+              <li><a href="#tabsSolde-1">Graph</a></li>
+              <li><a href="#tabsSolde-2">Data</a></li>
+          </ul>
+          <div id="tabsSolde-1">
+              <div id="chartSoldeByUser" style="width:100%; height:400px;"></div>
+          </div>
+          <div id="tabsSolde-2">
+              <ul>
+              {{#each reckoning.participants }}
+                  <li><b>{{name}}</b>&nbsp;:&nbsp;<b>{{toFixed solde}} euros</b></li>
+              {{/each}}
+              </ul>
+          </div>
+      </div>
+
       <h2><?php p($l->t('Balance')); ?></h2>
       <ul>
       {{#each reckoning.balance }}
@@ -44,6 +67,32 @@
               <input class="combien" placeholder="<?php p($l->t('How much ?')); ?>"></input>
 
               <button class="new_line"><?php p($l->t('Add')); ?></button>
+
+              <p class="message"></p>
+          </div>
+      </div>
+      <div>
+          <a href="#" class="formParticipant app-content-list-item">
+            <div class="app-content-list-item-icon" style="background-color: rgb(0, 0, 0);">+</div>
+            <div class="app-content-list-item-line-one"><?php p($l->t('Participants'));?></div>
+          </a>
+          <div class="participantForm hidden">
+              <div class="addParticipantForm">
+                  <input class="name" placeholder="<?php p($l->t('Name ?')); ?>"></input>
+                  <input class="percent" placeholder="<?php p($l->t('Percent ?')); ?>"></input>
+                  <button class="new_participant"><?php p($l->t('Add')); ?></button>
+              </div>
+
+              <ul>
+              {{#each reckoning.participants}}
+                <li class="updateParticipantForm" data-id="{{id}}">
+                  <input class="name" value="{{name}}"></input>
+                  <input class="percent" value="{{percent}}"></input>
+                  <button class="update_participant">Update</button>
+                  <button class="delete_participant">Delete</button>
+                </li>
+              {{/each}}
+              </ul>
 
               <p class="message"></p>
           </div>

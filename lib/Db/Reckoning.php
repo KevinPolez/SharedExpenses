@@ -33,43 +33,71 @@ class Reckoning extends Entity implements JsonSerializable {
 
     protected $modified;
     protected $title;
-    //protected $hash;
     protected $description;
     protected $owner;
     protected $created;
     protected $lines;
+    protected $participants;
 
     function __contruct() {
-      parent::__construct();
-      $this->addType('modified', 'integer');
-      $this->lines = array();
-    }
-
-    function __construct($content)
-    {
-       $this->setId($content['id']);
-       $this->setTitle($content['title']);
-       $this->setModified($content['modified']);
-       $this->setDescription($content['description']);
-       $this->setCreated($content['created']);
-       $this->setOwner($content['owner']);
-
-       foreach ($content['lines'] as $l) {
-         $line = new Line();
-         $line->setId($l['id']);
-         $line->setReckoningId($l['reckoningId']);
-         $line->setAmount($l['amount']);
-         $line->setWho($l['who']);
-         $line->setWhy($l['why']);
-         $line->setUserId($l['userId']);
-         $line->setWhen($l['when']);
-         $line->setCreated($l['created']);
-
-         $this->lines[] = $line;
-       }
+        parent::__construct();
+        $this->addType('modified', 'integer');
+        $this->lines = array();
+        $this->participants = array();
     }
 
     /**
+     * Constructor
+     * Read a json structure and create object
+     */
+    function __construct($content)
+    {
+         $this->setId($content['id']);
+         $this->setTitle($content['title']);
+         $this->setModified($content['modified']);
+         $this->setDescription($content['description']);
+         $this->setCreated($content['created']);
+         $this->setOwner($content['owner']);
+         $this->lines = array();
+         $this->participants = array();
+
+         if ( isset($content['participants']) ) {
+             foreach ($content['participants'] as $p) {
+                 $participant = new Participant();
+                 $participant->setId($p['id']);
+                 $participant->setReckoningId($p['reckoningId']);
+                 $participant->setName($p['name']);
+                 $participant->setPercent($p['percent']);
+
+                 $this->participants[] = $participant;
+             }
+         }
+
+         foreach ($content['lines'] as $l) {
+             $line = new Line();
+             $line->setId($l['id']);
+             $line->setReckoningId($l['reckoningId']);
+             $line->setAmount($l['amount']);
+             $line->setWho($l['who']);
+             $line->setWhy($l['why']);
+             $line->setUserId($l['userId']);
+             $line->setWhen($l['when']);
+             $line->setCreated($l['created']);
+
+             $this->lines[] = $line;
+             // if the participant is not on the participant list, add it
+             if ( $this->findParticipantByName($line->getWho()) === null )
+             {
+                 $participant = new Participant();
+                 $participant->setName($line->getWho());
+                 $participant->setPercent(50);
+                 $this->addParticipant($participant);
+             }
+         }
+    }
+
+    /**
+     * Create reckoning from a file
      * @param File $file
      * @return static
      */
@@ -87,6 +115,7 @@ class Reckoning extends Entity implements JsonSerializable {
     public function jsonSerialize() {
         // workarround for a new reckoning (we don't want send null value, but an empty array)
         if ( $this->lines === null ) $this->lines = array();
+        if ( $this->participants === null ) $this->participants = array();
 
         // date format
         //this->created = date('Ymd H:i:s', $this->created);
@@ -97,12 +126,14 @@ class Reckoning extends Entity implements JsonSerializable {
             'created' => $this->created,
             'modified' => $this->modified,
             'description' => $this->description,
-            'lines' => $this->lines
+            'lines' => $this->lines,
+            'participants' => $this->participants
         ];
     }
 
     /**
      * add a new line, set id of this line
+     * if the participant is not on the participant list, add it
      * @param Line $line
      * @return Line
      */
@@ -115,6 +146,15 @@ class Reckoning extends Entity implements JsonSerializable {
       }
       $line->setId($id);
       $this->lines[] = $line;
+
+      if ( $this->findParticipantByName($line->getWho()) === null )
+      {
+          $participant = new Participant();
+          $participant->setName($line->getWho());
+          $participant->setPercent(50);
+          $this->addParticipant($participant);
+      }
+
       return $line;
     }
 
@@ -150,6 +190,95 @@ class Reckoning extends Entity implements JsonSerializable {
             break;
           }
         }
+    }
+
+    /**
+     * Add an participant on participant list
+     * @param Participant $participant
+     */
+    public function addParticipant(Participant $participant) {
+        $participant->setReckoningId($this->getId());
+        $id = 0;
+        if ( $lastParticipant = end($this->participants))
+        {
+            $id = $lastParticipant->getId()+1;
+        }
+        $participant->setId($id);
+        $this->participants[] = $participant;
+        return $participant;
+    }
+
+    /**
+     * Find a participant on a reckoning
+     * @param $lineId
+     */
+    public function findParticipant($participantId) {
+        foreach ($this->participants as $participant) {
+            if ( $participant->getId() == $participantId)
+                return $participant;
+        }
+        return null;
+    }
+
+    /**
+     * Delete a participant from a reckoning
+     * all lines related to this participant will be deleted too
+     * @param Participant $participant
+     */
+    public function deleteParticipant(Participant $participant) {
+        $linesToDelete = array();
+        foreach ($this->lines as $line) {
+            if ( $line->getWho() === $participant->getName() ) {
+                $linesToDelete[] = $line;
+            }
+        }
+        foreach ($linesToDelete as $line) {
+            $this->deleteLine($line);
+        }
+        $key = array_search($participant, $this->participants);
+        if ( $key !== false ) unset($this->participants[$key]);
+    }
+
+    /**
+     * Update a participant
+     * all lines erlated to this participant should be updated if participant name change
+     * @param Participant $participant
+     */
+    public function updateParticipant(Participant $participant) {
+
+        $oldName = $participant->getName();
+        foreach ( $this->participants as $key => $p) {
+            if ($p->getId() == $participant->getId() ) {
+                $oldName = $p->getName();
+                $this->participants[$key] = $participant;
+                break;
+            }
+        }
+
+        if ( $oldName !== $participant->getName() ) {
+          $linesToUpdate = array();
+          foreach ($this->lines as $line) {
+              if ( $line->getWho() === $oldName ) {
+                  $linesToUpdate[] = $line;
+              }
+          }
+          foreach ($linesToUpdate as $line) {
+              $line->setWho($participant->getName());
+              $this->updateLine($line);
+          }
+        }
+    }
+
+    /**
+     * Find a participant by his name on the participant list
+     * @param string $name
+     * @return Participant
+     */
+    private function findParticipantByName($name) {
+        foreach ( $this->participants as $participant) {
+            if ($participant->getName() === $name ) return $participant;
+        }
+        return null;
     }
 
 }

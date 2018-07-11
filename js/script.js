@@ -20,87 +20,98 @@
  *
  */
 
- (function (OC, window, $, undefined) {
- 'use strict';
+(function (OC, window, $, undefined) {
+'use strict';
 
- $(document).ready(function () {
+$(document).ready(function () {
 
- Handlebars.registerHelper('firstLetter', function( context, options) {
-   return context.substring(0, 1);
- });
+/**
+ * Helper for get the first letter of a string
+ */
+Handlebars.registerHelper('firstLetter', function( context, options) {
+    return context.substring(0, 1);
+});
 
- Handlebars.registerHelper('toFixed', function(number) {
-  return parseFloat(number).toFixed(2);
- });
+/**
+ * Helper for force number display with two decimal
+ */
+Handlebars.registerHelper('toFixed', function(number) {
+    return parseFloat(number).toFixed(2);
+});
 
- var translations = {
-     newReckoning: $('#new-reckoning-string').text()
- };
+var translations = {
+    newReckoning: $('#new-reckoning-string').text()
+};
 
- // this reckonings object holds all our reckonings
- var Reckonings = function (baseUrl) {
-     this._baseUrl = baseUrl;
-     this._reckonings = [];
-     this._activeReckoning = undefined;
- };
+// this reckonings object holds all our reckonings
+var Reckonings = function (baseUrl) {
+    this._baseUrl = baseUrl;
+    this._reckonings = [];
+    this._activeReckoning = undefined;
+};
 
- Reckonings.prototype = {
-     load: function (id) {
-         var self = this;
-         this._reckonings.forEach(function (reckoning) {
-             if (reckoning.id === id) {
-                 reckoning.active = true;
-                 self._activeReckoning = reckoning;
-                 self.compute();
-             } else {
-                 reckoning.active = false;
-             }
-         });
-     },
+Reckonings.prototype = {
 
-     round: function(value) {
+    // find a reckoning from his ID and set it active
+    load: function (id) {
+        var self = this;
+        console.log("load reckoning");
+        this._reckonings.forEach(function (reckoning) {
+            if (reckoning.id === id) {
+                reckoning.active = true;
+                self._activeReckoning = reckoning;
+                self.compute();
+            } else {
+                reckoning.active = false;
+            }
+        });
+    },
+
+    // round function for number
+    round: function(value) {
        value = parseFloat(value);
        value = +(Math.ceil(value + "e+2") +"e-2");
        return value;
-     },
-     compute: function() {
-       var self = this;
-       var reckoning = self._activeReckoning;
-       self._activeReckoning.total = 0;
-       self._activeReckoning.participants = [];
-       self._activeReckoning.balance = [];
+    },
 
-       // total spent compute
-       this._activeReckoning.lines.forEach(function(line) {
-         // find if participant already exist
-         var participant = self._activeReckoning.participants.find(function(element) {
-           return element.name === line.who;
-         });
-         // if new
-         if ( participant === undefined ) {
-            self._activeReckoning.participants.push({
-              'name': line.who,
-              'total': self.round(line.amount)
-            });
-         } else { // if already exist
-           participant.total += self.round(line.amount);
-           var index = self._activeReckoning.participants.indexOf(participant);
-           self._activeReckoning.participants[index] = participant;
-         }
-         self._activeReckoning.total += self.round(line.amount);
-       });
+    // find all lines related to a participant
+    findTotalByParticipant: function(participant) {
+        var self = this;
+        var total = 0;
+        this._activeReckoning.lines.forEach(function(line) {
+            if ( line.who == participant.name) {
+                total += parseFloat(line.amount);
+            }
+        });
+        return self.round(total);
+    },
+
+    // compute Total, Solde and Balance
+    compute: function() {
+        var self = this;
+        console.log("compute");
+        var reckoning = self._activeReckoning;
+        self._activeReckoning.total = 0;
+        self._activeReckoning.balance = [];
+
+        // total spent by participants
+        console.log(this._activeReckoning.participants);
+        this._activeReckoning.participants.forEach(function(participant) {
+            var total = self.findTotalByParticipant(participant);
+            var index = self._activeReckoning.participants.indexOf(participant);
+            self._activeReckoning.participants[index].total = total;
+            self._activeReckoning.total += total;
+        });
 
        // solde compute
        var totalByParticipant = self._activeReckoning.total / self._activeReckoning.participants.length
        totalByParticipant = self.round(totalByParticipant);
        this._activeReckoning.participants.forEach(function(participant) {
            var index = self._activeReckoning.participants.indexOf(participant);
-           participant.solde = participant.total - totalByParticipant;
-           participant.solde = self.round(participant.solde);
-           self._activeReckoning.participants[index] = participant;
+           self._activeReckoning.participants[index].solde = self.round(participant.total - totalByParticipant);
        });
 
-       // sort participants array by solde
+       // sort participants by solde
        this._activeReckoning.participants.sort(function(a, b) {
          if ( a.solde < b.solde) return -1;
          else if ( a.solde > b.solde) return 1;
@@ -145,9 +156,13 @@
        });
      },
 
+     // Return the active reckoning
      getActive: function () {
          return this._activeReckoning;
      },
+
+     // Delete the active reckoning
+     // DELETE /reckoning/{id}
      removeActive: function () {
          var index;
          var deferred = $.Deferred();
@@ -179,6 +194,9 @@
          }
          return deferred.promise();
      },
+
+     // Create a reckoning
+     // POST /reckoning
      create: function (reckoning) {
          var deferred = $.Deferred();
          var self = this;
@@ -197,9 +215,14 @@
          });
          return deferred.promise();
      },
+
+     // return all reckonings
      getAll: function () {
          return this._reckonings;
      },
+
+     // load all reckonings
+     // GET /reckonings
      loadAll: function () {
          var deferred = $.Deferred();
          var self = this;
@@ -212,6 +235,9 @@
          });
          return deferred.promise();
      },
+
+     // update active reckoning
+     // PUT /reckonings/{id}
      updateActive: function (title, description) {
          var reckoning = this.getActive();
          reckoning.title = title;
@@ -224,6 +250,9 @@
              data: JSON.stringify(reckoning)
          });
      },
+
+     // Add a line on the active reckoning
+     // POST /reckonings/{id}/lines
      addLine: function( amount, when, who, why) {
         var deferred = $.Deferred();
         var reckoning = this.getActive();
@@ -240,8 +269,11 @@
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(line)
-        }).done(function(line) {
-          self._activeReckoning.lines.push(line);
+        }).done(function(reckoning) {
+          var index = self._reckonings.findIndex(function(element){
+              return element.id == reckoning.id;
+          });
+          self._reckonings[index] = reckoning;
           self.load(reckoning.id);
           deferred.resolve();
         }).fail(function() {
@@ -249,6 +281,9 @@
         });
         return deferred.promise();
      },
+
+     // Update a line on the active reckoning
+     // PUT /reckonings/{id}/lines/{lineId}
      updateLine: function(lineId, amount, when, who, why) {
        var deferred = $.Deferred();
        var reckoning = this.getActive();
@@ -268,18 +303,21 @@
            method: 'PUT',
            contentType: 'application/json',
            data: JSON.stringify(line)
-       }).done(function(line) {
-         var index = self._activeReckoning.lines.findIndex(function(element){
-           return element.id == line.id;
+       }).done(function(newReckoning) {
+         var index = self._reckonings.findIndex(function(element){
+             return element.id == reckoning.id;
          });
-         self._activeReckoning.lines[index] = line;
-         self.load(reckoning.id);
+         self._reckonings[index] = newReckoning;
+         self.load(newReckoning.id);
          deferred.resolve();
        }).fail(function() {
           deferred.reject();
        });
        return deferred.promise();
      },
+
+     // Delete a line on the active reckoning
+     // DELETE /reckonings/{id}/lines/{lineId}
      deleteLine: function(lineId) {
        var deferred = $.Deferred();
        var reckoning = this.getActive();
@@ -289,21 +327,122 @@
            url: this._baseUrl + '/' + reckoning.id + '/lines/'+lineId,
            method: 'DELETE',
            contentType: 'application/json'
-       }).done(function(line) {
-         var index;
-         self._activeReckoning.lines.forEach(function (l, counter) {
-             if (l.id === line.id) {
-                 index = counter;
-             }
-         });
-         self._activeReckoning.lines.splice(index,1);
-         self.load(reckoning.id);
-         deferred.resolve();
+       }).done(function(newReckoning) {
+          var index = self._reckonings.findIndex(function(element){
+             return element.id == reckoning.id;
+          });
+          self._reckonings[index] = newReckoning;
+          self.load(newReckoning.id);
+          deferred.resolve();
        }).fail(function() {
-         deferred.reject();
+          deferred.reject();
        });
+
        return deferred.promise();
-     }
+    },
+
+    // Add a participant on a reckoning
+    // POST /reckonings/{id}/participants
+    addParticipant: function(name, percent) {
+        var deferred = $.Deferred();
+        var reckoning = this.getActive();
+        var self = this;
+        var participant = {
+            'reckoningId': reckoning.id,
+            'name': name,
+            'percent': percent
+        };
+
+        $.ajax({
+            url: this._baseUrl + '/' + reckoning.id + '/participants',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(participant)
+        }).done(function(newReckoning) {
+            var index = self._reckonings.findIndex(function(element){
+               return element.id == reckoning.id;
+            });
+            self._reckonings[index] = newReckoning;
+            self.load(newReckoning.id);
+            deferred.resolve();
+        }).fail(function() {
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    },
+
+    // Update a participant on a reckoning
+    // PUT /reckonings/{id}/participants/{participantId}
+    updateParticipant: function(participantId, name, percent) {
+        var deferred = $.Deferred();
+        var reckoning = this.getActive();
+        var self = this;
+
+        var participant = {
+          'reckoningId': reckoning.id,
+          'id': participantId,
+          'name': name,
+          'percent': percent
+        };
+
+        $.ajax({
+            url: this._baseUrl + '/' + reckoning.id + '/participants/'+participantId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(participant)
+        }).done(function(newReckoning) {
+            var index = self._reckonings.findIndex(function(element){
+               return element.id == reckoning.id;
+            });
+            self._reckonings[index] = newReckoning;
+            self.load(newReckoning.id);
+            deferred.resolve();
+        }).fail(function() {
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    },
+
+    // Delete a participant on a reckoning
+    // DELETE /reckonings/{id}/participants/{participantId}
+    deleteParticipant: function(participantId) {
+        console.log("delete participant");
+        var deferred = $.Deferred();
+        var reckoning = this.getActive();
+        var self = this;
+
+        $.ajax({
+            url: this._baseUrl + '/' + reckoning.id + '/participants/'+participantId,
+            method: 'DELETE',
+            contentType: 'application/json'
+        }).done(function(newReckoning) {
+            console.log("ajax done");
+            console.log(newReckoning);
+            var index = self._reckonings.findIndex(function(element){
+               return element.id == reckoning.id;
+            });
+            self._reckonings[index] = newReckoning;
+            self.load(newReckoning.id);
+            deferred.resolve();
+        }).fail(function() {
+            deferred.reject();
+        });
+
+        return deferred.promise();
+    },
+
+    // Get participant name list
+    getParticipants: function() {
+        var list = [];
+        if ( this._activeReckoning !== undefined ) {
+            this._activeReckoning.participants.forEach(function(p) {
+                list.push(p.name);
+            });
+        }
+        return list;
+    }
  };
 
  // this will be the view that is used to update the html
@@ -312,12 +451,22 @@
  };
 
  View.prototype = {
+
+     /**
+      * Render content template.
+      * this template display all graphs :
+      * - Expenses by users
+      * - Solde by users
+      * And compute balance.
+      */
      renderContent: function () {
          var source = $('#content-tpl').html();
          var template = Handlebars.compile(source);
          var html = template({reckoning: this._reckonings.getActive()});
 
          $('#editor').html(html);
+
+         $( ".tabs" ).tabs()
 
         var self = this;
 
@@ -338,7 +487,7 @@
                       type: 'bar'
                   },
                   title: {
-                      text: 'Expenses by user'
+                      text: ''
                   },
                   xAxis: {
                       categories: participantArray
@@ -358,7 +507,7 @@
                       type: 'bar'
                   },
                   title: {
-                      text: 'Solde by user'
+                      text: ''
                   },
                   xAxis: {
                       categories: participantArray
@@ -443,6 +592,12 @@
          $('.addExpenseForm').toggleClass('hidden');
        });
 
+       // show participant form when click on a.formParticipant
+       $('a.formParticipant').on('click',function(event){
+         event.preventDefault();
+         $('.participantForm').toggleClass('hidden');
+       });
+
        // check if amount is correct
        $('#app-content input.combien').keydown(function(event) {
          self.checkAmount(this, this.value+event.key);
@@ -467,6 +622,53 @@
            $('#app-content input.quand').removeClass('warning');
          }
        });
+
+        // autocompletion
+        $('#app-content input.qui').autocomplete({
+            source : self._reckonings.getParticipants(),
+            minLength: 0
+        });
+
+        // handle new participant
+        $('.participantForm button.new_participant').click(function() {
+            console.log("add");
+            var form = $(this).parent('.addParticipantForm');
+            var name = $('input.name', form).val();
+            var percent = $('input.percent', form).val();
+            self._reckonings.addParticipant(name, percent).done(function() {
+                self.render();
+            }).fail(function() {
+                alert('Could not add participant on reckoning');
+            });
+        });
+
+        // handle update participant
+        $('.participantForm button.update_participant').click(function() {
+            console.log("update");
+            var form = $(this).parent('.updateParticipantForm');
+            var participantId = $(form).data('id');
+            var name = $('input.name', form).val();
+            var percent = $('input.percent', form).val();
+            self._reckonings.updateParticipant(participantId, name, percent).done(function() {
+                self.render();
+            }).fail(function() {
+                alert('Could not update participant on reckoning');
+            });
+        });
+
+        // handle delete participant
+        $('.participantForm button.delete_participant').click(function() {
+            console.log("delete");
+            var form = $(this).parent('.updateParticipantForm');
+            var participantId = $(form).data('id');
+            console.log("before delete participant")
+            self._reckonings.deleteParticipant(participantId).done(function() {
+                console.log("before render")
+                self.render();
+            }).fail(function() {
+                alert('Could not delete participant on reckoning');
+            });
+        });
 
        // handle new line
        $('.addExpenseForm button.new_line').click(function() {
@@ -531,7 +733,7 @@
                self._reckonings.updateLine(lineId, amount, when, who, why).done(function() {
                    self.render();
                }).fail(function() {
-                 alert('Could not add line on reckoning');
+                   alert('Could not add line on reckoning');
                });
              }
              else {
@@ -657,12 +859,14 @@
              self.render();
          });
      },
-     render: function () {
-         this.renderNavigation();
-         this.renderContent();
-         this.renderList();
-     }
- };
+
+    // render the templates
+    render: function () {
+        this.renderNavigation(); // navigation template
+        this.renderList(); // list template
+        this.renderContent(); // content template
+    }
+};
 
  var reckonings = new Reckonings(OC.generateUrl('/apps/sharedexpenses/reckonings'));
  var view = new View(reckonings);

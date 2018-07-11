@@ -58,7 +58,7 @@ class ReckoningController extends Controller {
       */
      public function show($id) {
        return $this->handleNotFound(function () use ($id) {
-         return $this->service->find($id, $this->userId);
+         return new DataResponse($this->service->find($id, $this->userId));
        });
      }
 
@@ -69,7 +69,7 @@ class ReckoningController extends Controller {
       * @param string $description
       */
      public function create($title, $description) {
-       return $this->service->create($title, $description, $this->userId);
+       return new DataResponse($this->service->create($title, $description, $this->userId));
      }
 
      /**
@@ -81,7 +81,7 @@ class ReckoningController extends Controller {
       */
      public function update($id, $title, $description) {
        return $this->handleNotFound(function () use ($id, $title, $description) {
-         return $this->service->update($id, $title, $description, $this->userId);
+         return new DataResponse($this->service->update($id, $title, $description, $this->userId));
        });
      }
 
@@ -92,7 +92,7 @@ class ReckoningController extends Controller {
       */
      public function destroy($id) {
        return $this->handleNotFound(function () use ($id) {
-         return $this->service->delete($id, $this->userId);
+         return new DataResponse($this->service->delete($id, $this->userId));
        });
      }
 

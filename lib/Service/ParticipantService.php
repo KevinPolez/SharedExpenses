@@ -7,11 +7,11 @@ use Exception;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 
-use OCA\SharedExpenses\Db\Line;
+use OCA\SharedExpenses\Db\Participant;
 use OCA\SharedExpenses\Service\ReckoningService;
 
 
-class LineService {
+class ParticipantService {
 
     private $reckoningService;
 
@@ -45,40 +45,47 @@ class LineService {
         }
     }
 
-    public function create($reckoningId, $amount, $when, $who, $why, $userId) {
-        $line = new Line();
+    /**
+     * Create a new Participant
+     */
+    public function create($reckoningId, $name, $percent, $userId) {
+        $participant = new Participant();
 
-        $line->setAmount($amount);
-        $line->setWho($who);
-        $line->setWhen($when);
-        $line->setWhy($why);
-        $line->setUserId($userId);
-        $line->setCreated(new \Datetime('NOW'));
+        $participant->setReckoningId($reckoningId);
+        $participant->setName($name);
+        $participant->setPercent($percent);
 
-        $reckoning = $this->reckoningService->addLine($reckoningId, $line, $userId);
+        $reckoning = $this->reckoningService->addParticipant($reckoningId, $participant, $userId);
 
         return $reckoning;
     }
 
-    public function update($id, $reckoningId, $amount, $when, $who, $why, $userId) {
+    /**
+     * Update a Participant
+     */
+    public function update($id, $reckoningId, $name, $percent, $userId) {
         try {
-            $line = $this->reckoningService->findLine($reckoningId, $id, $userId);
-            $line->setReckoningId($reckoningId);
-            $line->setAmount($amount);
-            $line->setWho($who);
-            $line->setWhen($when);
-            $line->setWhy($why);
+            $participant = $this->reckoningService->findParticipant($reckoningId, $id, $userId);
 
-            return $this->reckoningService->updateLine($reckoningId, $line, $userId);
+            $participant->setReckoningId($reckoningId);
+            $participant->setName($name);
+            $participant->setPercent($percent);
+
+            $reckoning = $this->reckoningService->updateParticipant($reckoningId, $participant, $userId);
+            return $reckoning;
         } catch(Exception $e) {
             $this->handleException($e);
         }
     }
 
+    /**
+     * Delete a Participant
+     */
     public function delete($id, $reckoningId, $userId) {
         try {
-            $line = $this->reckoningService->findLine($reckoningId,$id,$userId);
-            return $this->reckoningService->deleteLine($reckoningId, $line, $userId);
+            $participant = $this->reckoningService->findParticipant($reckoningId,$id,$userId);
+            $reckoning = $this->reckoningService->deleteParticipant($reckoningId, $participant, $userId);
+            return $reckoning;
         } catch(Exception $e) {
             $this->handleException($e);
         }

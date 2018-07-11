@@ -68,10 +68,11 @@
       * @NoAdminRequired
       *
       * @param int $reckoningId
-      * @param string $ammmount
+      * @param string $ammount
       * @param string when
       * @param string who
       * @param string why
+      * @return Reckoning
       */
      public function create($reckoningId, $amount, $when, $who, $why) {
         $amount = $this->roundAmount($amount);
@@ -83,7 +84,8 @@
       *
       * @param int $id
       * @param int $reckoningId
-      * @param string $ammmount
+      * @param string $ammount
+      * @return Reckoning
       */
      public function update($id, $reckoningId, $amount, $when, $who, $why) {
          $amount = $this->roundAmount($amount);
@@ -96,6 +98,8 @@
       * @NoAdminRequired
       *
       * @param int $id
+      * @param int $reckoningId
+      * @return Reckoning
       */
      public function destroy($id, $reckoningId) {
        return $this->handleNotFound(function () use ($id, $reckoningId) {

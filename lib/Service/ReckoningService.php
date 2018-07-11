@@ -13,6 +13,7 @@ use OCP\Files\Folder;
 
 use OCA\SharedExpenses\Db\Reckoning;
 use OCA\SharedExpenses\Db\Line;
+use OCA\SharedExpenses\Db\Participant;
 
 
 
@@ -114,7 +115,7 @@ class ReckoningService {
         $reckoning->setModified(new \Datetime('NOW'));
         $this->save($reckoning, $userId);
 
-        // if title is updated, the file name must be updated too
+        // TODO if title is updated, the file name must be updated too
         return $reckoning;
     }
 
@@ -128,9 +129,9 @@ class ReckoningService {
     public function addLine($reckoningId, Line $line, $userId) {
         try {
             $reckoning = $this->find($reckoningId, $userId);
-            $line = $reckoning->addLine($line);
+            $reckoning->addLine($line);
             $this->save($reckoning, $userId);
-            return $line;
+            return $reckoning;
         } catch(Exception $e) {
             $this->handleException($e);
         }
@@ -141,28 +142,32 @@ class ReckoningService {
      * @param int $reckoningId the id of the reckoning
      * @param Line $line
      * @param string $userId
-     * @return Line
+     * @return Reckoning
      */
     public function deleteLine($reckoningId, Line $line, $userId) {
       try {
         $reckoning = $this->find($reckoningId, $userId);
         $reckoning->deleteLine($line);
         $this->save($reckoning, $userId);
-        return $line;
+        return $reckoning;
       } catch(Exception $e) {
         $this->handleException($e);
       }
     }
 
     /**
-     *
+     * Update a line on a reckoning
+     * @param int $reckoningId the id of the reckoning
+     * @param Line $line
+     * @param string $userId
+     * @return Reckoning
      */
     public function updateLine($reckoningId, Line $line, $userId) {
       try {
         $reckoning = $this->find($reckoningId, $userId);
         $reckoning->updateLine($line);
         $this->save($reckoning, $userId);
-        return $line;
+        return $reckoning;
       } catch(Exception $e) {
         $this->handleException($e);
       }
@@ -171,8 +176,7 @@ class ReckoningService {
     /**
      * Find a line on a reckoning
      */
-    public function findLine($reckoningId, $lineId, $userId)
-    {
+    public function findLine($reckoningId, $lineId, $userId) {
       try {
         $reckoning = $this->find($reckoningId, $userId);
         $line = $reckoning->findLine($lineId);
@@ -180,7 +184,64 @@ class ReckoningService {
       } catch(Exception $e) {
         $this->handleException($e);
       }
+    }
 
+    /**
+     * Add a participant on a reckoning
+     * @return Reckoning
+     */
+    public function addParticipant($reckoningId, Participant $participant, $userId) {
+        try {
+            $reckoning = $this->find($reckoningId, $userId);
+            $participant = $reckoning->addParticipant($participant);
+            $this->save($reckoning, $userId);
+            return $reckoning;
+        } catch(Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * Update a participant on a reckoning
+     * @return Reckoning
+     */
+    public function updateParticipant($reckoningId, Participant $participant, $userId) {
+        try {
+          $reckoning = $this->find($reckoningId, $userId);
+          $reckoning->updateParticipant($participant);
+          $this->save($reckoning, $userId);
+          return $reckoning;
+        } catch(Exception $e) {
+          $this->handleException($e);
+        }
+    }
+
+    /**
+     * Delete a participant on a reckoning
+     * @return Reckoning
+     */
+    public function deleteParticipant($reckoningId, Participant $participant, $userId) {
+        try {
+          $reckoning = $this->find($reckoningId, $userId);
+          $reckoning->deleteParticipant($participant);
+          $this->save($reckoning, $userId);
+          return $reckoning;
+        } catch(Exception $e) {
+          $this->handleException($e);
+        }
+    }
+
+    /**
+     * Find a participant on a reckoning
+     */
+    public function findParticipant($reckoningId, $participantId, $userId) {
+        try {
+          $reckoning = $this->find($reckoningId, $userId);
+          $participant = $reckoning->findParticipant($participantId);
+          return $participant;
+        } catch(Exception $e) {
+          $this->handleException($e);
+        }
     }
 
     private function handleException ($e) {
@@ -193,7 +254,7 @@ class ReckoningService {
     }
 
     /**
-     *
+     * save reckoning structure on his file
      */
     private function save(Reckoning $reckoning, $userId)
     {
@@ -203,9 +264,9 @@ class ReckoningService {
     }
 
     /**
-     *
+     * get tags
      */
-    private function getTags ($id) {
+    private function getTags($id) {
         $tagger = \OC::$server->getTagManager()->load('files');
         if($tagger===null) {
             $tags = [];
@@ -238,7 +299,7 @@ class ReckoningService {
      * @throws NoteDoesNotExistException
      * @return \OCP\Files\File
      */
-    private function getFileById ($folder, $id) {
+    private function getFileById($folder, $id) {
         $file = $folder->getById($id);
 
         if(count($file) <= 0 || !$this->isReckoning($file[0])) {
