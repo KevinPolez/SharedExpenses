@@ -39,6 +39,16 @@ Handlebars.registerHelper('toFixed', function(number) {
     return parseFloat(number).toFixed(2);
 });
 
+/**
+ * Helper for find an element on an array
+ */
+Handlebars.registerHelper('ifIn', function(elem, list, options) {
+    if(list.indexOf(elem) > -1) {
+        return options.fn(this);
+    }
+    return options.inverse(this);
+});
+
 var translations = {
     newReckoning: $('#new-reckoning-string').text()
 };
@@ -55,7 +65,6 @@ Reckonings.prototype = {
     // find a reckoning from his ID and set it active
     load: function (id) {
         var self = this;
-        console.log("load reckoning");
         this._reckonings.forEach(function (reckoning) {
             if (reckoning.id === id) {
                 reckoning.active = true;
@@ -70,45 +79,53 @@ Reckonings.prototype = {
     // round function for number
     round: function(value) {
        value = parseFloat(value);
-       value = +(Math.ceil(value + "e+2") +"e-2");
+       value = +(Math.round(value + "e+2") +"e-2");
        return value;
     },
 
-    // find all lines related to a participant
-    findTotalByParticipant: function(participant) {
+    // find participant index by his name
+    findParticipantByName: function(name) {
         var self = this;
-        var total = 0;
-        this._activeReckoning.lines.forEach(function(line) {
-            if ( line.who == participant.name) {
-                total += parseFloat(line.amount);
+        var index = -1;
+        this._activeReckoning.participants.forEach(function(participant) {
+            if ( participant.name == name ) {
+                index = self._activeReckoning.participants.indexOf(participant);
             }
         });
-        return self.round(total);
+        return index;
     },
 
     // compute Total, Solde and Balance
     compute: function() {
         var self = this;
-        console.log("compute");
         var reckoning = self._activeReckoning;
         self._activeReckoning.total = 0;
         self._activeReckoning.balance = [];
 
-        // total spent by participants
-        console.log(this._activeReckoning.participants);
+        // init some values
         this._activeReckoning.participants.forEach(function(participant) {
-            var total = self.findTotalByParticipant(participant);
             var index = self._activeReckoning.participants.indexOf(participant);
-            self._activeReckoning.participants[index].total = total;
-            self._activeReckoning.total += total;
+            self._activeReckoning.participants[index].total = 0;
+            self._activeReckoning.participants[index].solde = 0;
         });
 
-       // solde compute
-       var totalByParticipant = self._activeReckoning.total / self._activeReckoning.participants.length
-       totalByParticipant = self.round(totalByParticipant);
-       this._activeReckoning.participants.forEach(function(participant) {
-           var index = self._activeReckoning.participants.indexOf(participant);
-           self._activeReckoning.participants[index].solde = self.round(participant.total - totalByParticipant);
+       // solde by participants
+       this._activeReckoning.lines.forEach(function(line) {
+          line.for.forEach(function(name) {
+              var index = self.findParticipantByName(name);
+              if ( index != -1) {
+                  if ( name != line.who ) {
+                      self._activeReckoning.participants[index].solde -= self.round(line.amount / line.for.length);
+                  }
+                  else {
+                      self._activeReckoning.participants[index].solde += self.round(line.amount / line.for.length);
+                  }
+              }
+          });
+          var index = self.findParticipantByName(line.who);
+          if ( ! line.for.includes(line.who) ) self._activeReckoning.participants[index].solde += line.amount;
+          self._activeReckoning.participants[index].total += parseFloat(line.amount);
+          self._activeReckoning.total += parseFloat(line.amount);
        });
 
        // sort participants by solde
@@ -122,8 +139,7 @@ Reckonings.prototype = {
        this._activeReckoning.participants.forEach(function(participant) {
            var index = self._activeReckoning.participants.indexOf(participant);
            var futurSolde = participant.solde;
-
-            while (futurSolde < 0 ) {
+           while (futurSolde < 0 ) {
              // find a participant with a positive solde (handle previous balance line)
              var participantPositive = self._activeReckoning.participants.find(function(element) {
                var solde = element.solde;
@@ -132,7 +148,6 @@ Reckonings.prototype = {
                });
                return solde > 0;
              });
-
              // create a balance line
              if ( participantPositive.solde - Math.abs(futurSolde) >= 0 )
              {
@@ -151,7 +166,6 @@ Reckonings.prototype = {
                });
                futurSolde += participantPositive.solde;
              }
-
            }
        });
      },
@@ -253,7 +267,7 @@ Reckonings.prototype = {
 
      // Add a line on the active reckoning
      // POST /reckonings/{id}/lines
-     addLine: function( amount, when, who, why) {
+     addLine: function( amount, when, who, why, forList) {
         var deferred = $.Deferred();
         var reckoning = this.getActive();
         var self = this;
@@ -262,7 +276,8 @@ Reckonings.prototype = {
           'amount': amount,
           'when': when,
           'who': who,
-          'why': why
+          'why': why,
+          'for': forList
         };
         $.ajax({
             url: this._baseUrl + '/' + reckoning.id + '/lines',
@@ -284,7 +299,7 @@ Reckonings.prototype = {
 
      // Update a line on the active reckoning
      // PUT /reckonings/{id}/lines/{lineId}
-     updateLine: function(lineId, amount, when, who, why) {
+     updateLine: function(lineId, amount, when, who, why, forList) {
        var deferred = $.Deferred();
        var reckoning = this.getActive();
        var self = this;
@@ -295,7 +310,8 @@ Reckonings.prototype = {
          'amount': amount,
          'when': when,
          'who': who,
-         'why': why
+         'why': why,
+         'for': forList,
        };
 
        $.ajax({
@@ -408,7 +424,6 @@ Reckonings.prototype = {
     // Delete a participant on a reckoning
     // DELETE /reckonings/{id}/participants/{participantId}
     deleteParticipant: function(participantId) {
-        console.log("delete participant");
         var deferred = $.Deferred();
         var reckoning = this.getActive();
         var self = this;
@@ -418,8 +433,6 @@ Reckonings.prototype = {
             method: 'DELETE',
             contentType: 'application/json'
         }).done(function(newReckoning) {
-            console.log("ajax done");
-            console.log(newReckoning);
             var index = self._reckonings.findIndex(function(element){
                return element.id == reckoning.id;
             });
@@ -631,7 +644,6 @@ Reckonings.prototype = {
 
         // handle new participant
         $('.participantForm button.new_participant').click(function() {
-            console.log("add");
             var form = $(this).parent('.addParticipantForm');
             var name = $('input.name', form).val();
             var percent = $('input.percent', form).val();
@@ -644,7 +656,6 @@ Reckonings.prototype = {
 
         // handle update participant
         $('.participantForm button.update_participant').click(function() {
-            console.log("update");
             var form = $(this).parent('.updateParticipantForm');
             var participantId = $(form).data('id');
             var name = $('input.name', form).val();
@@ -658,12 +669,9 @@ Reckonings.prototype = {
 
         // handle delete participant
         $('.participantForm button.delete_participant').click(function() {
-            console.log("delete");
             var form = $(this).parent('.updateParticipantForm');
             var participantId = $(form).data('id');
-            console.log("before delete participant")
             self._reckonings.deleteParticipant(participantId).done(function() {
-                console.log("before render")
                 self.render();
             }).fail(function() {
                 alert('Could not delete participant on reckoning');
@@ -673,13 +681,17 @@ Reckonings.prototype = {
        // handle new line
        $('.addExpenseForm button.new_line').click(function() {
            // get the form
-           var form = $(this).parent('.addExpenseForm');
+           var form = $(this).parents('.addExpenseForm');
 
            // get values
            var amount = $('input.combien', form).val();
            var when = $('input.quand', form).val();
            var who = $('input.qui', form).val();
            var why = $('input.quoi', form).val();
+           var forList = [];
+           $('input.for', form).each(function() {
+             if ( $(this).is(":checked") ) forList.push($(this).val());
+           });
 
             // check values
             var resultAmount = self.checkAmount($('input.combien', form),amount);
@@ -693,7 +705,7 @@ Reckonings.prototype = {
               && resultWhen == true
               && resultWho == true
               && resultWhy == true ) {
-              self._reckonings.addLine(amount, when, who, why).done(function() {
+              self._reckonings.addLine(amount, when, who, why, forList).done(function() {
                   self.render();
               }).fail(function() {
                 alert('Could not add line on reckoning');
@@ -708,13 +720,17 @@ Reckonings.prototype = {
        // handle update line
        $('.updateExpenseForm button.update_line').click(function() {
              // get the form
-             var form = $(this).parent('.updateExpenseForm');
+             var form = $(this).parents('.updateExpenseForm');
 
              // get values
              var amount = $('input.combien', form).val();
              var when = $('input.quand', form).val();
              var who = $('input.qui', form).val();
              var why = $('input.quoi', form).val();
+             var forList = [];
+             $('input.for', form).each(function() {
+               if ( $(this).is(":checked") ) forList.push($(this).val());
+             });
 
              // check values
              var resultAmount = self.checkAmount($('input.combien', form),amount);
@@ -730,7 +746,7 @@ Reckonings.prototype = {
                && resultWhen == true
                && resultWho == true
                && resultWhy == true ) {
-               self._reckonings.updateLine(lineId, amount, when, who, why).done(function() {
+               self._reckonings.updateLine(lineId, amount, when, who, why, forList).done(function() {
                    self.render();
                }).fail(function() {
                    alert('Could not add line on reckoning');

@@ -36,8 +36,16 @@ class Line extends Entity implements JsonSerializable {
     protected $when;
     protected $who;
     protected $why;
+    protected $for;
+
+    function __construct() {
+      $this->for = array();
+    }
 
     public function jsonSerialize() {
+        // workarround for a new line (we don't want send null value, but an empty array)
+        if ( $this->for === null ) $this->for = array();
+
         return [
             'id' => $this->id,
             'reckoningId' => $this->reckoningId,
@@ -46,7 +54,8 @@ class Line extends Entity implements JsonSerializable {
             'amount' => $this->amount,
             'when' => $this->when,
             'who' => $this->who,
-            'why' => $this->why
+            'why' => $this->why,
+            'for' => $this->for
         ];
     }
 }

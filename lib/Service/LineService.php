@@ -45,7 +45,7 @@ class LineService {
         }
     }
 
-    public function create($reckoningId, $amount, $when, $who, $why, $userId) {
+    public function create($reckoningId, $amount, $when, $who, $why, $for, $userId) {
         $line = new Line();
 
         $line->setAmount($amount);
@@ -53,6 +53,7 @@ class LineService {
         $line->setWhen($when);
         $line->setWhy($why);
         $line->setUserId($userId);
+        $line->setFor($for);
         $line->setCreated(new \Datetime('NOW'));
 
         $reckoning = $this->reckoningService->addLine($reckoningId, $line, $userId);
@@ -60,7 +61,7 @@ class LineService {
         return $reckoning;
     }
 
-    public function update($id, $reckoningId, $amount, $when, $who, $why, $userId) {
+    public function update($id, $reckoningId, $amount, $when, $who, $why, $for, $userId) {
         try {
             $line = $this->reckoningService->findLine($reckoningId, $id, $userId);
             $line->setReckoningId($reckoningId);
@@ -68,6 +69,7 @@ class LineService {
             $line->setWho($who);
             $line->setWhen($when);
             $line->setWhy($why);
+            $line->setFor($for);
 
             return $this->reckoningService->updateLine($reckoningId, $line, $userId);
         } catch(Exception $e) {

@@ -83,6 +83,7 @@ class Reckoning extends Entity implements JsonSerializable {
              $line->setUserId($l['userId']);
              $line->setWhen($l['when']);
              $line->setCreated($l['created']);
+             $line->setFor($l['for']);
 
              $this->lines[] = $line;
              // if the participant is not on the participant list, add it
@@ -175,8 +176,12 @@ class Reckoning extends Entity implements JsonSerializable {
      * @param Line $line
      */
     public function deleteLine(Line $line) {
-        $key = array_search($line, $this->lines);
-        if ( $key !== false ) unset($this->lines[$key]);
+        foreach ( $this->lines as $key => $l) {
+            if ($l->getId() == $line->getId() ) {
+                unset($this->lines[$key]);
+                break;
+            }
+        }
     }
 
     /**
@@ -185,10 +190,10 @@ class Reckoning extends Entity implements JsonSerializable {
      */
     public function updateLine(Line $line) {
         foreach ( $this->lines as $key => $l) {
-          if ($l->getId() == $line->getId() ) {
-            $this->lines[$key] = $line;
-            break;
-          }
+            if ($l->getId() == $line->getId() ) {
+                $this->lines[$key] = $line;
+                break;
+            }
         }
     }
 

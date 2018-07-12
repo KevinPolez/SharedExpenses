@@ -74,7 +74,7 @@ class ParticipantController extends Controller {
      * @return Reckoning
      */
     public function create($reckoningId, $name, $percent) {
-       return new $this->service->create($reckoningId, $name, $percent, $this->userId);
+       return $this->service->create($reckoningId, $name, $percent, $this->userId);
     }
 
     /**
@@ -102,8 +102,6 @@ class ParticipantController extends Controller {
       return $this->handleNotFound(function () use ($id, $reckoningId) {
         $reckoning = $this->service->delete($id, $reckoningId, $this->userId);
         return $reckoning;
-        //var_dump($response);
-        //return new JSONResponse($reckoning);
       });
     }
 }

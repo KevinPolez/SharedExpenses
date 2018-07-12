@@ -58,15 +58,25 @@
             <div class="app-content-list-item-line-one"><?php p($l->t('Add an expense'));?></div>
           </a>
           <div class="addExpenseForm hidden">
-              <input class="qui" placeholder="<?php p($l->t('Who ?')); ?>"></input>
+              <div>
+                <input class="qui" placeholder="<?php p($l->t('Who ?')); ?>"></input>
+                <input class="quand" placeholder="<?php p($l->t('When ?')); ?>"></input>
+                <input class="quoi" placeholder="<?php p($l->t('What ?')); ?>"></input>
+                <input class="combien" placeholder="<?php p($l->t('How much ?')); ?>"></input>
+              </div>
+              <div>
+                <h4>For ?</h4>
+                {{#each reckoning.participants}}
+                    <input id="for{{id}}" class="checkbox checkbox-white for" type="checkbox" value="{{name}}" checked="checked">
+                    <label for="for{{id}}">{{name}}</label><br />
+                {{/each}}
+              </div>
 
-              <input class="quand" placeholder="<?php p($l->t('When ?')); ?>"></input>
+              <div style="float:right">
+                  <button class="new_line"><?php p($l->t('Add')); ?></button>
+              </div>
 
-              <input class="quoi" placeholder="<?php p($l->t('What ?')); ?>"></input>
-
-              <input class="combien" placeholder="<?php p($l->t('How much ?')); ?>"></input>
-
-              <button class="new_line"><?php p($l->t('Add')); ?></button>
+              <br style="clear: both" />
 
               <p class="message"></p>
           </div>
@@ -101,7 +111,7 @@
           <div class="app-content-list-item" data-id="{{ id }}">
             <div class="app-content-list-item-icon" style="background-color: rgb(152, 59, 144);">{{firstLetter who}}</div>
             <div class="app-content-list-item-line-one">{{why}}</div>
-            <div class="app-content-list-item-line-two"><b>{{who}}</b> <?php p($l->t('has paid'));?> <b>{{toFixed amount}} euros</b></div>
+            <div class="app-content-list-item-line-two"><b>{{who}}</b> <?php p($l->t('has paid'));?> <b>{{toFixed amount}} euros</b>&nbsp;for : {{#each for}}<span class="user">{{this}}</span>{{/each}}</div>
             <span class="app-content-list-item-details">{{when}}</span>
             <div class="app-content-list-item-menu">
               <div class="icon-more"></div>
@@ -122,16 +132,27 @@
             </div>
           </div>
           <div class="updateExpenseForm hidden" data-id="{{ id }}">
-            <input class="qui" value="{{who}}"></input>
+            <div>
+                <input class="qui" value="{{who}}"></input>
+                <input class="quand" value="{{when}}"></input>
+                <input class="quoi" value="{{why}}"></input>
+                <input class="combien" value="{{amount}}"></input>
+            </div>
 
-            <input class="quand" value="{{when}}"></input>
+            <div>
+              <h4>For ?</h4>
+              {{#each ../reckoning.participants}}
+                  <input id="forUpdate{{../id}}_{{id}}" class="checkbox checkbox-white for" type="checkbox" value="{{name}}" {{#ifIn name ../for }}checked="checked"{{/ifIn}}>
+                  <label for="forUpdate{{../id}}_{{id}}">{{name}}</label><br />
+              {{/each}}
+            </div>
 
-            <input class="quoi" value="{{why}}"></input>
+            <div style="float:right">
+                <button class="update_line"><?php p($l->t('Update')); ?></button>
+                <button class="cancel_update"><?php p($l->t('Cancel')); ?></button>
+            </div>
 
-            <input class="combien" value="{{amount}}"></input>
-
-            <button class="update_line"><?php p($l->t('Update')); ?></button>
-            <button class="cancel_update"><?php p($l->t('Cancel')); ?></button>
+            <br style="clear: both" />
 
             <p class="message"></p>
           </div>
