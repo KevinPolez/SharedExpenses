@@ -40,7 +40,7 @@ Handlebars.registerHelper('toFixed', function(number) {
 });
 
 /**
- * Helper for find an element on an array
+ * Helper for find an item on an array
  */
 Handlebars.registerHelper('ifIn', function(elem, list, options) {
     if(list.indexOf(elem) > -1) {
@@ -54,10 +54,12 @@ var translations = {
 };
 
 // this reckonings object holds all our reckonings
-var Reckonings = function (baseUrl) {
+var Reckonings = function (baseUrl, shareBaseUrl) {
+    this._shareBaseUrl = shareBaseUrl;
     this._baseUrl = baseUrl;
     this._reckonings = [];
     this._activeReckoning = undefined;
+    console.log(this._shareBaseUrl);
 };
 
 Reckonings.prototype = {
@@ -109,64 +111,63 @@ Reckonings.prototype = {
             self._activeReckoning.participants[index].solde = 0;
         });
 
-       // solde by participants
-       this._activeReckoning.lines.forEach(function(line) {
-          line.for.forEach(function(name) {
-              var index = self.findParticipantByName(name);
-              if ( index != -1) {
-                  if ( name != line.who ) {
-                      self._activeReckoning.participants[index].solde -= self.round(line.amount / line.for.length);
-                  }
-                  else {
-                      self._activeReckoning.participants[index].solde += self.round(line.amount / line.for.length);
-                  }
-              }
-          });
-          var index = self.findParticipantByName(line.who);
-          if ( ! line.for.includes(line.who) ) self._activeReckoning.participants[index].solde += line.amount;
-          self._activeReckoning.participants[index].total += parseFloat(line.amount);
-          self._activeReckoning.total += parseFloat(line.amount);
+        // solde by participants
+        this._activeReckoning.lines.forEach(function(line) {
+            line.for.forEach(function(name) {
+                var index = self.findParticipantByName(name);
+                if ( index != -1) {
+                    self._activeReckoning.participants[index].solde -=
+                        self.round(line.amount / line.for.length);
+                }
+            });
+            var index = self.findParticipantByName(line.who);
+            if ( index != -1) {
+                self._activeReckoning.participants[index].solde += line.amount;
+                self._activeReckoning.participants[index].total += parseFloat(line.amount);
+            }
+            self._activeReckoning.total += parseFloat(line.amount);
        });
 
-       // sort participants by solde
-       this._activeReckoning.participants.sort(function(a, b) {
-         if ( a.solde < b.solde) return -1;
-         else if ( a.solde > b.solde) return 1;
-         return 0;
-       });
+        // sort participants by solde
+        this._activeReckoning.participants.sort(function(a, b) {
+            if ( a.solde < b.solde) return -1;
+            else if ( a.solde > b.solde) return 1;
+            return 0;
+        });
 
        // balance compute
-       this._activeReckoning.participants.forEach(function(participant) {
-           var index = self._activeReckoning.participants.indexOf(participant);
-           var futurSolde = participant.solde;
-           while (futurSolde < 0 ) {
-             // find a participant with a positive solde (handle previous balance line)
-             var participantPositive = self._activeReckoning.participants.find(function(element) {
-               var solde = element.solde;
-               self._activeReckoning.balance.forEach(function(line) {
-                 if (line.credit == element.name) solde -= line.amount;
-               });
-               return solde > 0;
-             });
-             // create a balance line
-             if ( participantPositive.solde - Math.abs(futurSolde) >= 0 )
-             {
-               self._activeReckoning.balance.push({
-                 'debit': participant.name,
-                 'credit': participantPositive.name,
-                 'amount': Math.abs(futurSolde)
-               });
-               futurSolde += Math.abs(futurSolde);
-             }
-             else {
-               self._activeReckoning.balance.push({
-                 'debit': participant.name,
-                 'credit': participantPositive.name,
-                 'amount': participantPositive.solde
-               });
-               futurSolde += participantPositive.solde;
-             }
-           }
+        this._activeReckoning.participants.forEach(function(participant) {
+            var index = self._activeReckoning.participants.indexOf(participant);
+            var futurSolde = participant.solde;
+            while (futurSolde < 0 ) {
+                // find a participant with a positive solde (handle previous balance line)
+                var participantPositive = self._activeReckoning.participants.find(function(element) {
+                    var solde = element.solde;
+                    self._activeReckoning.balance.forEach(function(line) {
+                        if (line.credit == element.name) solde -= line.amount;
+                    });
+                    return solde > 0;
+                });
+
+                // create a balance line
+                if ( participantPositive.solde - Math.abs(futurSolde) >= 0 )
+                {
+                    self._activeReckoning.balance.push({
+                        'debit': participant.name,
+                        'credit': participantPositive.name,
+                        'amount': Math.abs(futurSolde)
+                    });
+                    futurSolde += Math.abs(futurSolde);
+                }
+                else {
+                    self._activeReckoning.balance.push({
+                        'debit': participant.name,
+                        'credit': participantPositive.name,
+                        'amount': participantPositive.solde
+                    });
+                    futurSolde += participantPositive.solde;
+                }
+            }
        });
      },
 
@@ -460,7 +461,7 @@ Reckonings.prototype = {
 
  // this will be the view that is used to update the html
  var View = function (reckonings) {
-     this._reckonings = reckonings;
+    this._reckonings = reckonings;
  };
 
  View.prototype = {
@@ -884,15 +885,19 @@ Reckonings.prototype = {
     }
 };
 
- var reckonings = new Reckonings(OC.generateUrl('/apps/sharedexpenses/reckonings'));
- var view = new View(reckonings);
- reckonings.loadAll().done(function () {
-     view.render();
- }).fail(function () {
-     alert('Could not load reckonings');
- });
+var reckonings = new Reckonings(
+    OC.generateUrl('/apps/sharedexpenses/reckonings'),
+    OC.generateUrl('/ocs/V2.php/apps/files_sharing/api/V1'));
+
+var view = new View(reckonings);
+
+reckonings.loadAll().done(function () {
+    view.render();
+}).fail(function () {
+    alert('Could not load reckonings');
+});
 
 
- });
+});
 
- })(OC, window, jQuery);
+})(OC, window, jQuery);
